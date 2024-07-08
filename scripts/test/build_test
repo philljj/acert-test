@@ -1,0 +1,14 @@
+#!/bin/bash
+cd test || exit 1
+
+if [ $# -eq 0 ]; then
+  gcc -g -Werror -Wall test_x509_acert.c -o test_acert \
+    -lssl -lcrypto -L/usr/local/lib64/ -I/usr/local/include/openssl/ \
+    || exit 1
+else
+  gcc -g -Werror -Wall test_x509_acert.c -o test_acert \
+    -DUSE_WOLFSSL \
+    -lwolfssl -L/usr/local/lib/ -I/usr/local/include/wolfssl/ \
+    || exit 1
+fi
+
