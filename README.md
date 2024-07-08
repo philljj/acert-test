@@ -3,7 +3,16 @@
 Simple test of ACERT (Attribute Certificate) support with OpenSSL
 and wolfSSL compat layer.
 
-# Prerequisites
+## Contents
+
+- certs (test attribute certs)
+- openssl (clone of openssl)
+- scripts (useful scripts)
+- test (simple test program)
+- wolfssl (clone of wolfssl)
+- README.md (you'r reading it now)
+
+## Prerequisites
 
 ```sh
 $ git clone https://github.com/openssl/openssl.git
@@ -20,7 +29,7 @@ $ ./scripts/openssl/build_openssl
 $ ./scripts/wolfssl/build_wolfssl
 ```
 
-# Testing OpenSSL
+## Testing OpenSSL
 
 ```sh
 $./scripts/test/build_test
@@ -35,7 +44,7 @@ Attribute Certificate:
 ...
 ```
 
-# Testing wolfSSL
+## Testing wolfSSL
 
 ```sh
 $./scripts/test/build_test wolf
