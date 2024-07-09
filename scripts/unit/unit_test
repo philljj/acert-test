@@ -1,0 +1,19 @@
+#!/bin/bash
+
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+NC='\033[0m'
+
+function run_test {
+  if ./test/test_acert -f $1 > /dev/null 2>&1; then
+    echo -e "info: $1: ${GREEN}pass${NC}"
+  else
+    echo -e "error: $1: ${RED}fail${NC}"
+  fi
+}
+
+./scripts/test/build_test $@ || exit 1
+
+for cert in certs/*; do
+  run_test $cert
+done

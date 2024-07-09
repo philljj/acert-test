@@ -54,7 +54,7 @@ main(int    argc,
 
   if (acert_file == NULL) {
     printf("info: acert_file: NULL\n");
-    return -1;
+    return EXIT_FAILURE;
   }
 
   printf("info: using acert: %s\n", acert_file);
@@ -62,29 +62,29 @@ main(int    argc,
   bp = BIO_new_file(acert_file, "r");
   if (bp == NULL) {
     printf("error: BIO_new_file returned: NULL\n");
-    return -1;
+    return EXIT_FAILURE;
   }
 
   bout = BIO_new_fp(stderr, BIO_NOCLOSE);
 
   if (bout == NULL) {
     printf("error: BIO_new_fp returned: NULL\n");
-    return -1;
+    return EXIT_FAILURE;
   }
 
   acert = PEM_read_bio_X509_ACERT(bp, NULL, NULL, NULL);
 
   if (acert == NULL) {
     printf("error: PEM_read_bio_X509_ACERT returned: NULL\n");
-    return -1;
+    return EXIT_FAILURE;
   }
 
   rc = X509_ACERT_print(bout, acert);
 
   if (rc != 1) {
     printf("error: X509_ACERT_print returned: %d\n", rc);
-    return -1;
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
