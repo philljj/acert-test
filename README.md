@@ -56,7 +56,7 @@ info: using acert: certs/acert.pem
 ## Unit Tests
 
 ```sh
-$./scripts/unit/unit_test 
+$./scripts/unit/unit_test
 info: certs/acert_bc1.pem: pass
 info: certs/acert_bc2.pem: pass
 info: certs/acert_ietf.pem: pass
