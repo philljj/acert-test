@@ -1,4 +1,4 @@
-wolfssl
-openssl
+/wolfssl/
+/openssl/
 test/test_acert
 *.swp

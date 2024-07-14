@@ -86,5 +86,20 @@ main(int    argc,
     return EXIT_FAILURE;
   }
 
+  if (bp != NULL) {
+    BIO_free(bp);
+    bp = NULL;
+  }
+
+  if (bout != NULL) {
+    BIO_free(bout);
+    bout = NULL;
+  }
+
+  if (acert != NULL) {
+    X509_ACERT_free(acert);
+    acert = NULL;
+  }
+
   return EXIT_SUCCESS;
 }

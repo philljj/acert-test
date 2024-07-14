@@ -1,0 +1,5 @@
+#!/bin/bash
+git clone https://github.com/openssl/openssl.git --depth=1 || exit 1
+cd openssl || exit 1
+./Configure || exit 1
+make || exit 1

@@ -1,0 +1,16 @@
+#!/bin/bash
+cd wolfssl || exit 1
+
+#if [ -f configure ]; then
+#  rm configure
+#  autoreconf
+#fi
+
+./configure \
+  --enable-debug \
+  --enable-acert \
+  --enable-opensslextra \
+  CFLAGS="-DWOLFSSL_DEBUG_ASN_TEMPLATE" \
+  || exit 1
+make || exit 1
+sudo make install
