@@ -21,8 +21,8 @@ static int  acert_print_usage(void) __attribute__((noreturn));
 static int  acert_parse_file(const char * file);
 #if defined(USE_WOLFSSL)
 static int  acert_parse_attr(const X509_ACERT * x509);
-#endif /* if USE_WOLFSSL */
 static void acert_dump_hex(const char * what, const byte * data, size_t len);
+#endif /* if USE_WOLFSSL */
 
 static int verbose = 0;
 
@@ -203,15 +203,6 @@ acert_parse_attr(const X509_ACERT * x509)
 
   return rc;
 }
-#endif /* if USE_WOLFSSL */
-
-static int
-acert_print_usage(void)
-{
-  printf("usage:\n");
-  printf("  ./test/test_acert -f <path to acert file> [-v]\n");
-  exit(EXIT_FAILURE);
-}
 
 #define BOLDRED    "\033[1m\033[31m"
 #define BOLDGREEN  "\033[1m\033[32m"
@@ -328,4 +319,13 @@ acert_dump_hex(const char * what,
   printf("\n");
 
   return;
+}
+#endif /* if USE_WOLFSSL */
+
+static int
+acert_print_usage(void)
+{
+  printf("usage:\n");
+  printf("  ./test/test_acert -f <path to acert file> [-v]\n");
+  exit(EXIT_FAILURE);
 }
