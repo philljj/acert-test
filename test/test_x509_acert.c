@@ -185,7 +185,9 @@ acert_parse_attr(const X509_ACERT * x509)
     return -1;
   }
 
-  acert_dump_hex("Attributes", attr, attr_len);
+  if (verbose) {
+    acert_dump_hex("Attributes", attr, attr_len);
+  }
 
   max_idx = attr_len;
 
