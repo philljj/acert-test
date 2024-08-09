@@ -25,6 +25,8 @@ static void acert_dump_hex(const char * what, const byte * data, size_t len);
 #endif /* if USE_WOLFSSL */
 
 static int verbose = 0;
+static int parse = 0;
+static int dump = 0;
 
 int
 main(int    argc,
@@ -34,10 +36,18 @@ main(int    argc,
   int          opt = 0;
   int          rc = 0;
 
-  while ((opt = getopt(argc, argv, "f:v?")) != -1) {
+  while ((opt = getopt(argc, argv, "f:dpv?")) != -1) {
     switch (opt) {
+    case 'd':
+      dump = 1;
+      break;
+
     case 'f':
       file = optarg;
+      break;
+
+    case 'p':
+      parse = 1;
       break;
 
     case 'v':
@@ -173,6 +183,10 @@ acert_parse_attr(const X509_ACERT * x509)
   int          seq_len = 0;
   int          rc = 0;
 
+  if (!parse) {
+    return 0;
+  }
+
   rc = wolfSSL_X509_ACERT_get_attr_buf(x509, &attr, &attr_len);
 
   if (rc != 0) {
@@ -185,9 +199,7 @@ acert_parse_attr(const X509_ACERT * x509)
     return -1;
   }
 
-  if (verbose) {
-    acert_dump_hex("Attributes", attr, attr_len);
-  }
+  acert_dump_hex("Attributes", attr, attr_len);
 
   max_idx = attr_len;
 
@@ -227,6 +239,10 @@ acert_dump_hex(const char * what,
   uint16_t n_str = 0;
 
   memset(str_list, 0, sizeof(str_list));
+
+  if (!dump) {
+    return;
+  }
 
   printf("\ninfo: %s\n", what);
 
