@@ -17,11 +17,12 @@
   #include <openssl/x509_acert.h>
 #endif
 
-static int  acert_print_usage(void) __attribute__((noreturn));
-static int  acert_parse_file(const char * file);
+static int        acert_print_usage(void) __attribute__((noreturn));
+static int        acert_parse_file(const char * file, const char * cert);
+static EVP_PKEY * acert_read_pubkey(const char * cert);
 #if defined(USE_WOLFSSL)
-static int  acert_parse_attr(const X509_ACERT * x509);
-static void acert_dump_hex(const char * what, const byte * data, size_t len);
+static int        acert_parse_attr(const X509_ACERT * x509);
+static void       acert_dump_hex(const char * what, const byte * data, size_t len);
 #endif /* if USE_WOLFSSL */
 
 static int verbose = 0;
@@ -32,12 +33,17 @@ int
 main(int    argc,
      char * argv[])
 {
+  const char * cert = NULL;
   const char * file = NULL;
   int          opt = 0;
   int          rc = 0;
 
-  while ((opt = getopt(argc, argv, "f:dpv?")) != -1) {
+  while ((opt = getopt(argc, argv, "c:f:dpv?")) != -1) {
     switch (opt) {
+    case 'c':
+      cert = optarg;
+      break;
+
     case 'd':
       dump = 1;
       break;
@@ -75,7 +81,7 @@ main(int    argc,
 
   printf("info: using acert: %s\n", file);
 
-  rc = acert_parse_file(file);
+  rc = acert_parse_file(file, cert);
 
   if (rc) {
     printf("error: acert_parse returned: %d\n", rc);
@@ -139,8 +145,10 @@ acert_read_print(const char * file)
 }
 
 static int
-acert_parse_file(const char * file)
+acert_parse_file(const char * file,
+                 const char * cert)
 {
+  EVP_PKEY *   pkey = NULL;
   X509_ACERT * x509 = NULL;
   int          rc = 0;
 
@@ -158,9 +166,27 @@ acert_parse_file(const char * file)
   }
   #endif /* if USE_WOLFSSL */
 
+  if (cert) {
+    pkey = acert_read_pubkey(cert);
+  }
+
+  if (pkey) {
+    rc = X509_ACERT_verify(x509, pkey);
+
+    if (rc != 1) {
+      printf("error: X509_ACERT_verify(%p, %p) returned: %d\n", x509, pkey,
+             rc);
+    }
+  }
+
   if (x509 != NULL) {
     X509_ACERT_free(x509);
     x509 = NULL;
+  }
+
+  if (pkey) {
+    EVP_PKEY_free(pkey);
+    pkey = NULL;
   }
 
   return rc;
@@ -344,6 +370,75 @@ static int
 acert_print_usage(void)
 {
   printf("usage:\n");
-  printf("  ./test/test_acert -f <path to acert file> [-v]\n");
+  printf("  ./test/test_acert -f <path to acert file> [-dvp] [-c <path to cert file>]\n");
   exit(EXIT_FAILURE);
+}
+
+/* Reads a pubkey from cert.
+ *
+ *
+ *
+ *
+ * */
+static EVP_PKEY *
+acert_read_pubkey(const char * cert)
+{
+  BIO *      bp = NULL;
+  BIO *      bout = NULL;
+  X509 *     x509 = NULL;
+  EVP_PKEY * pkey = NULL;
+  int        rc = -1;
+
+  bp = BIO_new_file(cert, "r");
+
+  if (bp == NULL) {
+    printf("error: BIO_new_file returned: NULL\n");
+    goto end_cert_read;
+  }
+
+  bout = BIO_new_fp(stderr, BIO_NOCLOSE);
+
+  if (bout == NULL) {
+    printf("error: BIO_new_fp returned: NULL\n");
+    goto end_cert_read;
+  }
+
+  x509 = PEM_read_bio_X509(bp, NULL, NULL, NULL);
+
+  if (x509 == NULL) {
+    printf("error: PEM_read_bio_X509 returned: NULL\n");
+    goto end_cert_read;
+  }
+
+  rc = X509_print(bout, x509);
+
+  if (rc != 1) {
+    printf("error: X509_print returned: %d\n", rc);
+  }
+
+  pkey = X509_get_pubkey(x509);
+
+  if (pkey == NULL) {
+    printf("error: X509_get_pubkey(%p) returned: NULL\n", x509);
+    goto end_cert_read;
+  }
+
+  end_cert_read:
+
+  if (bp != NULL) {
+    BIO_free(bp);
+    bp = NULL;
+  }
+
+  if (bout != NULL) {
+    BIO_free(bout);
+    bout = NULL;
+  }
+
+  if (x509 != NULL) {
+    X509_free(x509);
+    x509 = NULL;
+  }
+
+  return pkey;
 }
