@@ -22,6 +22,7 @@ static int          acert_do_test(const char * file, const char * cert);
 static X509_ACERT * acert_read(const char * file);
 static int          acert_print(X509_ACERT * x509);
 static EVP_PKEY *   acert_read_print_pubkey(const char * cert);
+static int          acert_test_api_misc(X509_ACERT * x509);
 #if defined(USE_WOLFSSL)
 static int          acert_parse_attr(const X509_ACERT * x509);
 static void         acert_dump_hex(const char * what, const byte * data,
@@ -124,8 +125,15 @@ acert_do_test(const char * file,
   }
 
   rc = acert_print(x509);
+
   if (rc) {
     printf("error: acert_print returned: %d\n", rc);
+    fail = 1;
+  }
+
+  rc = acert_test_api_misc(x509);
+
+  if (rc) {
     fail = 1;
   }
 
@@ -171,6 +179,28 @@ acert_do_test(const char * file,
   }
 
   return fail ? -1 : 0;
+}
+
+static int
+acert_test_api_misc(X509_ACERT * x509)
+{
+  int rc = 0;
+  int ver = 0;
+
+  if (x509 == NULL) {
+    return -1;
+  }
+
+  ver = X509_ACERT_get_version(x509);
+
+  if (ver <= 0) {
+    printf("error: X509_ACERT_get_version returned: %d\n", ver);
+    return -1;
+  }
+
+  printf("info: acert version: %x\n", (uint8_t) ver);
+
+  return rc;
 }
 
 #if defined(USE_WOLFSSL)
