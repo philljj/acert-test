@@ -24,7 +24,8 @@ static int          acert_print(X509_ACERT * x509);
 static EVP_PKEY *   acert_read_print_pubkey(const char * cert);
 #if defined(USE_WOLFSSL)
 static int          acert_parse_attr(const X509_ACERT * x509);
-static void         acert_dump_hex(const char * what, const byte * data, size_t len);
+static void         acert_dump_hex(const char * what, const byte * data,
+                                   size_t len);
 #endif /* if USE_WOLFSSL */
 
 static int dump = 0;
@@ -100,6 +101,7 @@ main(int    argc,
   }
   else {
     printf("error: acert_do_test returned: %d\n", rc);
+    printf("fail\n");
   }
 
   return (rc == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
