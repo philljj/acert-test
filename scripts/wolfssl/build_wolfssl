@@ -1,10 +1,13 @@
 #!/bin/bash
 cd wolfssl || exit 1
 
-#if [ -f configure ]; then
-#  rm configure
-#  autoreconf
-#fi
+if [ $# -eq 1 ]; then
+  echo "info: full rebuild"
+  if [ -f configure ]; then
+    rm configure
+    autoreconf
+  fi
+fi
 
 ./configure \
   --enable-debug \
