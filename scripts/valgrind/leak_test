@@ -1,0 +1,7 @@
+#!/bin/bash
+vgd_pfx="valgrind --tool=memcheck"
+vgd_opts="--track-origins=yes --leak-check=full --show-leak-kinds=all"
+tst_file="certs/acert.pem"
+tst_opts="-p"
+
+$vgd_pfx $vgd_opts ./test/test_acert -f $tst_file $opts
