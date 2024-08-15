@@ -32,6 +32,7 @@ static void         acert_dump_hex(const char * what, const byte * data,
 static int dump = 0;
 static int parse = 0;
 static int print = 0;
+static int sign = 0;
 static int verbose = 0;
 
 int
@@ -43,7 +44,7 @@ main(int    argc,
   int          opt = 0;
   int          rc = 0;
 
-  while ((opt = getopt(argc, argv, "c:f:dprv?")) != -1) {
+  while ((opt = getopt(argc, argv, "c:f:dprsv?")) != -1) {
     switch (opt) {
     case 'c':
       cert = optarg;
@@ -63,6 +64,10 @@ main(int    argc,
 
     case 'r':
       parse = 1;
+      break;
+
+    case 's':
+      sign = 1;
       break;
 
     case 'v':
@@ -92,6 +97,11 @@ main(int    argc,
 
   if (cert != NULL) {
     printf("info: using cert file: %s\n", cert);
+  }
+
+  if (cert != NULL && sign != 0) {
+    printf("error: -c and -s are mutually exclusive\n");
+    return EXIT_FAILURE;
   }
 
   rc = acert_do_test(file, cert);
@@ -154,6 +164,39 @@ acert_do_test(const char * file,
       fail = 1;
     }
   }
+
+  #if !defined(USE_WOLFSSL)
+  /* todo: wolfssl sign acert support */
+  if (sign) {
+    pkey = EVP_RSA_gen(2048);
+
+    if (pkey != NULL) {
+      printf("info: EVP_RSA_gen(2048): good\n");
+    }
+    else {
+      printf("error: EVP_RSA_gen returned: NULL\n");
+      fail = 1;
+    }
+  }
+
+  if (sign && pkey) {
+    int sign_rc = X509_ACERT_sign(x509, pkey, EVP_sha256());
+
+    if (sign_rc > 0) {
+      printf("info: X509_ACERT_sign: good\n");
+    }
+    else {
+      printf("error: X509_ACERT_sign(%p, %p) returned: %d\n", x509, pkey,
+             sign_rc);
+      fail = 1;
+
+      if (pkey) {
+        EVP_PKEY_free(pkey);
+        pkey = NULL;
+      }
+    }
+  }
+  #endif /* if !USE_WOLFSSL */
 
   if (pkey) {
     int verify_rc = X509_ACERT_verify(x509, pkey);
