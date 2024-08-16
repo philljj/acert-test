@@ -33,6 +33,7 @@ static int dump = 0;
 static int parse = 0;
 static int print = 0;
 static int sign = 0;
+static int write_acert = 0;
 static int verbose = 0;
 
 int
@@ -44,7 +45,7 @@ main(int    argc,
   int          opt = 0;
   int          rc = 0;
 
-  while ((opt = getopt(argc, argv, "c:f:dprsv?")) != -1) {
+  while ((opt = getopt(argc, argv, "c:f:dprsvw?")) != -1) {
     switch (opt) {
     case 'c':
       cert = optarg;
@@ -72,6 +73,10 @@ main(int    argc,
 
     case 'v':
       verbose = 1;
+      break;
+
+    case 'w':
+      write_acert = 1;
       break;
 
     case '?':
