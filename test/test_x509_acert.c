@@ -8,6 +8,7 @@
   /* wolfssl includes */
   #include <wolfssl/options.h>
   #include <wolfssl/openssl/bio.h>
+  #include <wolfssl/openssl/pem.h>
   #include <wolfssl/openssl/ssl.h>
   #include <wolfssl/ssl.h>
 #else
@@ -18,10 +19,16 @@
 #endif
 
 static int          acert_print_usage_and_die(void) __attribute__((noreturn));
-static int          acert_do_test(const char * file, const char * cert);
+static int          acert_do_test(const char * file, const char * cert,
+                                  const char * pkey_file);
 static X509_ACERT * acert_read(const char * file);
+#if !defined(USE_WOLFSSL)
+static int          acert_write(const char * file, const X509_ACERT * acert);
+static int          acert_write_pubkey(const char * file, EVP_PKEY * pkey);
+#endif /* if !USE_WOLFSSL */
+static EVP_PKEY *   acert_read_pubkey(const char * file);
 static int          acert_print(X509_ACERT * x509);
-static EVP_PKEY *   acert_read_print_pubkey(const char * cert);
+static EVP_PKEY *   acert_read_x509_pubkey(const char * cert);
 static int          acert_test_api_misc(X509_ACERT * x509);
 #if defined(USE_WOLFSSL)
 static int          acert_parse_attr(const X509_ACERT * x509);
@@ -42,10 +49,11 @@ main(int    argc,
 {
   const char * cert = NULL;
   const char * file = NULL;
+  const char * pkey_file = NULL;
   int          opt = 0;
   int          rc = 0;
 
-  while ((opt = getopt(argc, argv, "c:f:dprsvw?")) != -1) {
+  while ((opt = getopt(argc, argv, "c:f:k:dprsvw?")) != -1) {
     switch (opt) {
     case 'c':
       cert = optarg;
@@ -57,6 +65,10 @@ main(int    argc,
 
     case 'f':
       file = optarg;
+      break;
+
+    case 'k':
+      pkey_file = optarg;
       break;
 
     case 'p':
@@ -104,12 +116,16 @@ main(int    argc,
     printf("info: using cert file: %s\n", cert);
   }
 
+  if (pkey_file != NULL) {
+    printf("info: using pkey file: %s\n", pkey_file);
+  }
+
   if (cert != NULL && sign != 0) {
     printf("error: -c and -s are mutually exclusive\n");
     return EXIT_FAILURE;
   }
 
-  rc = acert_do_test(file, cert);
+  rc = acert_do_test(file, cert, pkey_file);
 
   if (rc == 0) {
     printf("info: acert_do_test: good\n");
@@ -125,7 +141,8 @@ main(int    argc,
 
 static int
 acert_do_test(const char * file,
-              const char * cert)
+              const char * cert,
+              const char * pkey_file)
 {
   EVP_PKEY *   pkey = NULL;
   X509_ACERT * x509 = NULL;
@@ -162,13 +179,22 @@ acert_do_test(const char * file,
   #endif /* if USE_WOLFSSL */
 
   if (cert) {
-    pkey = acert_read_print_pubkey(cert);
+    pkey = acert_read_x509_pubkey(cert);
 
     if (pkey == NULL) {
       printf("error: acert_read_print_pubkey returned: NULL\n");
       fail = 1;
     }
   }
+  else if (pkey_file) {
+    pkey = acert_read_pubkey(pkey_file);
+
+    if (pkey == NULL) {
+      printf("error: acert_read_pubkey returned: NULL\n");
+      fail = 1;
+    }
+  }
+
 
   #if !defined(USE_WOLFSSL)
   /* todo: wolfssl sign acert support */
@@ -199,6 +225,22 @@ acert_do_test(const char * file,
         EVP_PKEY_free(pkey);
         pkey = NULL;
       }
+    }
+  }
+
+  if (write_acert && !fail) {
+    /* Save the signed acert to file. */
+    int write_rc = acert_write("acert_new.pem", x509);
+    if (write_rc) {
+      fail = 1;
+    }
+  }
+
+  if (write_acert && pkey && !fail) {
+    /* Save the new pubkey to file. */
+    int write_rc = acert_write_pubkey("pkey_new.pem", pkey);
+    if (write_rc) {
+      fail = 1;
     }
   }
   #endif /* if !USE_WOLFSSL */
@@ -430,7 +472,7 @@ acert_dump_hex(const char * what,
 /* Reads and print pubkey certificate.
  * */
 static EVP_PKEY *
-acert_read_print_pubkey(const char * cert)
+acert_read_x509_pubkey(const char * cert)
 {
   BIO *      bp = NULL;
   BIO *      bout = NULL;
@@ -526,6 +568,93 @@ acert_read(const char * file)
   printf("info: PEM_read_bio_X509_ACERT: good\n");
 
   return x509;
+}
+
+#if !defined(USE_WOLFSSL)
+/* Writes an x509 acert to file.
+ *
+ * Not supported in wolfSSL yet.
+ * */
+static int
+acert_write(const char * file,
+            const X509_ACERT * acert)
+{
+  BIO * bp = NULL;
+  int   ret = 0;
+
+  bp = BIO_new_file(file, "w");
+
+  if (bp == NULL) {
+    printf("error: BIO_new_file returned: NULL\n");
+    return -1;
+  }
+
+  ret = PEM_write_bio_X509_ACERT(bp, acert);
+  BIO_free(bp);
+  bp = NULL;
+
+  if (ret != 1) {
+    printf("error: PEM_write_bio_X509_ACERT: %d\n", ret);
+    return -1;
+  }
+
+  printf("info: PEM_write_bio_X509_ACERT: good\n");
+
+  return 0;
+}
+
+static int
+acert_write_pubkey(const char * file,
+                   EVP_PKEY *   pkey)
+{
+  BIO * bp = NULL;
+  int   ret = 0;
+
+  bp = BIO_new_file(file, "w");
+
+  if (bp == NULL) {
+    printf("error: BIO_new_file returned: NULL\n");
+    return -1;
+  }
+
+  ret = PEM_write_bio_PUBKEY(bp, pkey);
+  BIO_free(bp);
+  bp = NULL;
+
+  if (ret != 1) {
+    printf("error: PEM_write_bio_PUBKEY: %d\n", ret);
+    return -1;
+  }
+
+  printf("info: PEM_write_bio_PUBKEY: good\n");
+  return 0;
+}
+#endif /* if !USE_WOLFSSL */
+
+static EVP_PKEY *
+acert_read_pubkey(const char * file)
+{
+  BIO *      bp = NULL;
+  EVP_PKEY * pkey = NULL;
+
+  bp = BIO_new_file(file, "r");
+
+  if (bp == NULL) {
+    printf("error: BIO_new_file returned: NULL\n");
+    return NULL;
+  }
+
+  pkey = PEM_read_bio_PUBKEY(bp, &pkey, NULL, NULL);
+  BIO_free(bp);
+  bp = NULL;
+
+  if (pkey == NULL) {
+    printf("error: PEM_read_bio_PUBKEY returned: NULL\n");
+    return NULL;
+  }
+
+  printf("info: PEM_read_bio_PUBKEY: good\n");
+  return pkey;
 }
 
 static int
