@@ -10,9 +10,10 @@ if [ $# -eq 1 ]; then
 fi
 
 ./configure \
-  --enable-debug \
   --enable-acert \
+  --enable-debug \
   --enable-opensslextra \
+  --enable-rsapss \
   CFLAGS="-DWOLFSSL_DEBUG_ASN_TEMPLATE" \
   || exit 1
 make || exit 1
