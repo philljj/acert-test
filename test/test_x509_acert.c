@@ -117,7 +117,7 @@ main(int    argc,
   }
 
   if (pkey_file != NULL) {
-    printf("info: using pkey file: %s\n", pkey_file);
+    printf("info: using pubkey file: %s\n", pkey_file);
   }
 
   if (cert != NULL && sign != 0) {
@@ -693,7 +693,25 @@ acert_print(X509_ACERT * x509)
 static int
 acert_print_usage_and_die(void)
 {
+  printf("options:\n");
+  printf(" -c <path to pub key cert>\n");
+  printf(" -f <path to acert file\n");
+  printf(" -k <path to pub key file>\n");
+  printf(" -s                                  (resign and verify)\n");
+  printf(" -v                                  (verbose)\n");
+  printf(" -w                                  (write signed acert to file)\n");
+  printf("\n");
   printf("usage:\n");
-  printf("  ./test/test_acert -f <path to acert file> [-dvp] [-c <path to cert file>]\n");
+  printf("  verifying acert with pub key file:\n");
+  printf("  $./test/test_acert -f certs/signed/acert.pem -k certs/signed/acert_pubkey.pem\n");
+  printf("  info: using acert file: certs/signed/acert.pem\n");
+  printf("  info: using pubkey file: certs/signed/acert_pubkey.pem\n");
+  printf("  info: holder tag index: 2\n");
+  printf("  info: PEM_read_bio_X509_ACERT: good\n");
+  printf("  info: acert version: 1\n");
+  printf("  info: PEM_read_bio_PUBKEY: good\n");
+  printf("  info: X509_ACERT_verify: good\n");
+  printf("  info: acert_do_test: good\n");
+  printf("  success\n");
   exit(EXIT_FAILURE);
 }
