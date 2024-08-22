@@ -76,7 +76,8 @@ info: linking against openssl
 info: build good
 ```
 
-2. Use `certs/acert.pem` as input, and generate new keys and sign `-s`, use RSA-PSS `-r`, and write to file `-w`:
+2. Use `certs/acert.pem` as input `-f`, and generate new keys and sign `-s`,
+   use RSA-PSS `-r`, and write to file `-w`:
 
 ```sh
 $ ./test/test_acert -f certs/acert.pem -srw
@@ -100,7 +101,8 @@ info: linking against wolfssl
 info: build good
 ```
 
-4. Finally, test wolfssl verify using newly generated `acert_new.pem` and `pkey_new.pem`:
+4. Finally, test wolfssl verify using newly generated `acert_new.pem` and
+   `pkey_new.pem`:
 ```sh
 $ ./test/test_acert -f acert_new.pem -k pkey_new.pem
 info: using acert file: acert_new.pem
