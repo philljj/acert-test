@@ -8,6 +8,7 @@
   /* wolfssl includes */
   #include <wolfssl/options.h>
   #include <wolfssl/openssl/bio.h>
+  #include <wolfssl/openssl/evp.h>
   #include <wolfssl/openssl/pem.h>
   #include <wolfssl/openssl/ssl.h>
   #include <wolfssl/ssl.h>
@@ -38,6 +39,7 @@ static void         acert_dump_hex(const char * what, const byte * data,
 
 static int dump = 0;
 static int parse = 0;
+static int rsa_pss = 0;
 static int print = 0;
 static int sign = 0;
 static int write_acert = 0;
@@ -53,7 +55,7 @@ main(int    argc,
   int          opt = 0;
   int          rc = 0;
 
-  while ((opt = getopt(argc, argv, "c:f:k:dprsvw?")) != -1) {
+  while ((opt = getopt(argc, argv, "c:f:k:dpqrsvw?")) != -1) {
     switch (opt) {
     case 'c':
       cert = optarg;
@@ -75,8 +77,12 @@ main(int    argc,
       print = 1;
       break;
 
-    case 'r':
+    case 'q':
       parse = 1;
+      break;
+
+    case 'r':
+      rsa_pss = 1;
       break;
 
     case 's':
@@ -125,6 +131,10 @@ main(int    argc,
     return EXIT_FAILURE;
   }
 
+  if (rsa_pss) {
+    printf("info: using rsa_pss\n");
+  }
+
   rc = acert_do_test(file, cert, pkey_file);
 
   if (rc == 0) {
@@ -144,10 +154,10 @@ acert_do_test(const char * file,
               const char * cert,
               const char * pkey_file)
 {
-  EVP_PKEY *   pkey = NULL;
-  X509_ACERT * x509 = NULL;
-  uint8_t      fail = 0;
-  int          rc = 0;
+  EVP_PKEY *      pkey = NULL;
+  X509_ACERT *    x509 = NULL;
+  uint8_t         fail = 0;
+  int             rc = 0;
 
   x509 = acert_read(file);
 
@@ -199,14 +209,37 @@ acert_do_test(const char * file,
   #if !defined(USE_WOLFSSL)
   /* todo: wolfssl sign acert support */
   if (sign) {
-    pkey = EVP_RSA_gen(2048);
+    if (!rsa_pss) {
+      pkey = EVP_RSA_gen(2048);
 
-    if (pkey != NULL) {
-      printf("info: EVP_RSA_gen(2048): good\n");
+      if (pkey != NULL) {
+        printf("info: EVP_RSA_gen(2048): good\n");
+      }
+      else {
+        printf("error: EVP_RSA_gen returned: NULL\n");
+        fail = 1;
+      }
     }
     else {
-      printf("error: EVP_RSA_gen returned: NULL\n");
-      fail = 1;
+      EVP_PKEY_CTX * pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA_PSS, NULL);
+
+      if (pctx == NULL) {
+        printf("error: EVP_PKEY_CTX_new_id returned: NULL\n");
+      }
+
+      int pss_rc = EVP_PKEY_keygen_init(pctx);
+
+      if (pss_rc <= 0) {
+        printf("error: EVP_PKEY_keygen_init returned: %d\n", pss_rc);
+      }
+
+      pss_rc = EVP_PKEY_keygen(pctx, &pkey);
+
+      if (pss_rc <= 0) {
+        printf("error: EVP_PKEY_keygen returned: %d\n", pss_rc);
+      }
+
+      EVP_PKEY_CTX_free(pctx);
     }
   }
 
