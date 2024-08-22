@@ -21,10 +21,14 @@ for acert in "certs/acert.pem" \
     err_and_die "test_acert -f -k: $acert"
   fi
 
+  echo "  info: test_acert sign verify: $acert: good"
+
   # Now test verification with newly signed cert and key.
   if ! ./test/test_acert -f acert_new.pem -k pkey_new.pem > /dev/null ; then
     err_and_die "test_acert -srw: $acert"
   fi
+
+  echo "  info: test_acert read verify: $acert: good"
 
   # Now rebuild against wolfssl...
   if ! ./scripts/test/build_test wolf  > /dev/null; then
@@ -35,6 +39,8 @@ for acert in "certs/acert.pem" \
   if ! ./test/test_acert -f acert_new.pem -k pkey_new.pem > /dev/null ; then
     err_and_die "test_acert -f -k (wolf): $acert"
   fi
+
+  echo "  info: test_acert read verify (wolf): $acert: good"
 
   echo -e "info: $acert: ${GREEN}pass${NC}"
 done
