@@ -12,8 +12,26 @@ function run_test {
   fi
 }
 
-./scripts/test/build_test $@ || exit 1
+./scripts/test/build_test || exit 1
 
-for cert in certs/*.pem; do
-  run_test $cert
+for acert in "certs/acert.pem" \
+             "certs/acert_ietf.pem" \
+             "certs/acert_bc2.pem" \
+             "certs/signed/rsa_pss/acert.pem" \
+             "certs/signed/rsa_pss/acert_ietf.pem" \
+             "certs/signed/rsa_pss/acert_bc2.pem" ; do
+  run_test $acert
+done
+
+echo ""
+
+./scripts/test/build_test wolf || exit 1
+
+for acert in "certs/acert.pem" \
+             "certs/acert_ietf.pem" \
+             "certs/acert_bc2.pem" \
+             "certs/signed/rsa_pss/acert.pem" \
+             "certs/signed/rsa_pss/acert_ietf.pem" \
+             "certs/signed/rsa_pss/acert_bc2.pem"; do
+  run_test $acert
 done

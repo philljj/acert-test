@@ -43,4 +43,5 @@ for acert in "certs/acert.pem" \
   echo "  info: test_acert read verify (wolf): $acert: good"
 
   echo -e "info: $acert: ${GREEN}pass${NC}"
+  echo ""
 done
