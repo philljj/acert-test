@@ -1,0 +1,40 @@
+#!/bin/bash
+
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+NC='\033[0m'
+
+function err_and_die {
+  echo -e "error: $1: ${RED}fail${NC}"
+  exit 1
+}
+
+for acert in "certs/acert.pem" \
+             "certs/acert_ietf.pem" \
+             "certs/acert_bc2.pem"; do
+  # build against openssl
+  if ! ./scripts/test/build_test > /dev/null; then
+    err_and_die "build_test: $acert"
+  fi
+
+  if ! ./test/test_acert -f $acert -srw > /dev/null 2>&1; then
+    err_and_die "test_acert -f -k: $acert"
+  fi
+
+  # Now test verification with newly signed cert and key.
+  if ! ./test/test_acert -f acert_new.pem -k pkey_new.pem > /dev/null ; then
+    err_and_die "test_acert -srw: $acert"
+  fi
+
+  # Now rebuild against wolfssl...
+  if ! ./scripts/test/build_test wolf  > /dev/null; then
+    err_and_die "build_test wolf: $acert"
+  fi
+
+  # ... and repeat test.
+  if ! ./test/test_acert -f acert_new.pem -k pkey_new.pem > /dev/null ; then
+    err_and_die "test_acert -f -k (wolf): $acert"
+  fi
+
+  echo -e "info: $acert: ${GREEN}pass${NC}"
+done

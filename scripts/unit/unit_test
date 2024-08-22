@@ -14,6 +14,6 @@ function run_test {
 
 ./scripts/test/build_test $@ || exit 1
 
-for cert in certs/*; do
+for cert in certs/*.pem; do
   run_test $cert
 done
