@@ -19,6 +19,8 @@
   #include <openssl/x509_acert.h>
 #endif
 
+static int          acert_check_opts(const char * file, const char * cert,
+                                     const char * pkey_file);
 static int          acert_print_usage_and_die(void) __attribute__((noreturn));
 static int          acert_do_test(const char * file, const char * cert,
                                   const char * pkey_file);
@@ -111,28 +113,15 @@ main(int    argc,
   }
   #endif /* if USE_WOLFSSL */
 
+  rc = acert_check_opts(file, cert, pkey_file);
+
+  if (rc < 0) {
+    return EXIT_FAILURE;
+  }
+
   if (file == NULL) {
-    printf("info: file: NULL\n");
+    printf("error: file: NULL\n");
     return EXIT_FAILURE;
-  }
-
-  printf("info: using acert file: %s\n", file);
-
-  if (cert != NULL) {
-    printf("info: using cert file: %s\n", cert);
-  }
-
-  if (pkey_file != NULL) {
-    printf("info: using pubkey file: %s\n", pkey_file);
-  }
-
-  if (cert != NULL && sign != 0) {
-    printf("error: -c and -s are mutually exclusive\n");
-    return EXIT_FAILURE;
-  }
-
-  if (rsa_pss) {
-    printf("info: using rsa_pss\n");
   }
 
   rc = acert_do_test(file, cert, pkey_file);
@@ -150,6 +139,43 @@ main(int    argc,
 }
 
 static int
+acert_check_opts(const char * file,
+                 const char * cert,
+                 const char * pkey_file)
+{
+  if (file == NULL) {
+    printf("error: acert file required\n");
+    return -1;
+  }
+
+  printf("info: using acert file: %s\n", file);
+
+  if (cert != NULL) {
+    printf("info: using cert file: %s\n", cert);
+  }
+
+  if (pkey_file != NULL) {
+    printf("info: using pubkey file: %s\n", pkey_file);
+  }
+
+  if (pkey_file != NULL && cert != NULL) {
+    printf("error: -c and -k are mutually exclusive\n");
+    return -1;
+  }
+
+  if ((pkey_file != NULL || cert != NULL) && sign != 0) {
+    printf("error: -c[k] and -s are mutually exclusive\n");
+    return -1;
+  }
+
+  if (rsa_pss) {
+    printf("info: using rsa_pss\n");
+  }
+
+  return 0;
+}
+
+static int
 acert_do_test(const char * file,
               const char * cert,
               const char * pkey_file)
@@ -158,12 +184,16 @@ acert_do_test(const char * file,
   X509_ACERT *    x509 = NULL;
   uint8_t         fail = 0;
   int             rc = 0;
+#if !defined(USE_WOLFSSL)
+  EVP_PKEY_CTX *  pctx = NULL;
+#endif /* ! USE_WOLFSSL */
 
   x509 = acert_read(file);
 
   if (x509 == NULL) {
     printf("error: acert_read returned: NULL\n");
-    return -1;
+    fail = 1;
+    goto end_acert_do_test;
   }
 
   rc = acert_print(x509);
@@ -171,12 +201,15 @@ acert_do_test(const char * file,
   if (rc) {
     printf("error: acert_print returned: %d\n", rc);
     fail = 1;
+    goto end_acert_do_test;
   }
 
   rc = acert_test_api_misc(x509);
 
   if (rc) {
+    printf("error: acert_test_api_misc returned: %d\n", rc);
     fail = 1;
+    goto end_acert_do_test;
   }
 
   #if defined(USE_WOLFSSL)
@@ -185,6 +218,7 @@ acert_do_test(const char * file,
   if (rc) {
     printf("error: acert_parse_attr returned: %d\n", rc);
     fail = 1;
+    goto end_acert_do_test;
   }
   #endif /* if USE_WOLFSSL */
 
@@ -194,6 +228,7 @@ acert_do_test(const char * file,
     if (pkey == NULL) {
       printf("error: acert_read_print_pubkey returned: NULL\n");
       fail = 1;
+      goto end_acert_do_test;
     }
   }
   else if (pkey_file) {
@@ -202,14 +237,23 @@ acert_do_test(const char * file,
     if (pkey == NULL) {
       printf("error: acert_read_pubkey returned: NULL\n");
       fail = 1;
+      goto end_acert_do_test;
     }
   }
-
 
   #if !defined(USE_WOLFSSL)
   /* todo: wolfssl sign acert support */
   if (sign) {
+    /* Generate a new pkey, and sign the x509 acert.
+     * The pkey should not be loaded yet. */
+    if (pkey != NULL) {
+      printf("error: pkey already exists: %p\n", pkey);
+      fail = 1;
+      goto end_acert_do_test;
+    }
+
     if (!rsa_pss) {
+      /* Use normal boring RSA keygen. */
       pkey = EVP_RSA_gen(2048);
 
       if (pkey != NULL) {
@@ -218,28 +262,39 @@ acert_do_test(const char * file,
       else {
         printf("error: EVP_RSA_gen returned: NULL\n");
         fail = 1;
+        goto end_acert_do_test;
       }
     }
     else {
-      EVP_PKEY_CTX * pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA_PSS, NULL);
+      pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA_PSS, NULL);
 
       if (pctx == NULL) {
         printf("error: EVP_PKEY_CTX_new_id returned: NULL\n");
+        fail = 1;
+        goto end_acert_do_test;
       }
 
       int pss_rc = EVP_PKEY_keygen_init(pctx);
 
       if (pss_rc <= 0) {
         printf("error: EVP_PKEY_keygen_init returned: %d\n", pss_rc);
+        fail = 1;
+        goto end_acert_do_test;
       }
 
       pss_rc = EVP_PKEY_keygen(pctx, &pkey);
 
       if (pss_rc <= 0) {
         printf("error: EVP_PKEY_keygen returned: %d\n", pss_rc);
+        fail = 1;
+        goto end_acert_do_test;
       }
 
-      EVP_PKEY_CTX_free(pctx);
+      if (pkey == NULL) {
+        printf("error: EVP_PKEY_keygen returned: NULL\n");
+        fail = 1;
+        goto end_acert_do_test;
+      }
     }
   }
 
@@ -253,27 +308,25 @@ acert_do_test(const char * file,
       printf("error: X509_ACERT_sign(%p, %p) returned: %d\n", x509, pkey,
              sign_rc);
       fail = 1;
-
-      if (pkey) {
-        EVP_PKEY_free(pkey);
-        pkey = NULL;
-      }
+      goto end_acert_do_test;
     }
   }
 
-  if (write_acert && !fail) {
+  if (write_acert) {
     /* Save the signed acert to file. */
     int write_rc = acert_write("acert_new.pem", x509);
     if (write_rc) {
       fail = 1;
+      goto end_acert_do_test;
     }
   }
 
-  if (write_acert && pkey && !fail) {
+  if (write_acert && pkey) {
     /* Save the new pubkey to file. */
     int write_rc = acert_write_pubkey("pkey_new.pem", pkey);
     if (write_rc) {
       fail = 1;
+      goto end_acert_do_test;
     }
   }
   #endif /* if !USE_WOLFSSL */
@@ -288,13 +341,23 @@ acert_do_test(const char * file,
       printf("error: X509_ACERT_verify(%p, %p) returned: %d\n", x509, pkey,
              verify_rc);
       fail = 1;
+      goto end_acert_do_test;
     }
   }
+
+  end_acert_do_test:
 
   if (x509 != NULL) {
     X509_ACERT_free(x509);
     x509 = NULL;
   }
+
+#if !defined(USE_WOLFSSL)
+  if (pctx) {
+    EVP_PKEY_CTX_free(pctx);
+    pctx = NULL;
+  }
+#endif /* ! USE_WOLFSSL */
 
   if (pkey) {
     EVP_PKEY_free(pkey);
@@ -631,7 +694,7 @@ acert_write(const char * file,
     return -1;
   }
 
-  printf("info: PEM_write_bio_X509_ACERT: good\n");
+  printf("info: wrote acert to file: %s\n", file);
 
   return 0;
 }
@@ -659,7 +722,8 @@ acert_write_pubkey(const char * file,
     return -1;
   }
 
-  printf("info: PEM_write_bio_PUBKEY: good\n");
+  printf("info: wrote pubkey to file: %s\n", file);
+
   return 0;
 }
 #endif /* if !USE_WOLFSSL */
@@ -730,6 +794,7 @@ acert_print_usage_and_die(void)
   printf(" -c <path to pub key cert>\n");
   printf(" -f <path to acert file\n");
   printf(" -k <path to pub key file>\n");
+  printf(" -r                                  (use rsa_pss)\n");
   printf(" -s                                  (resign and verify)\n");
   printf(" -v                                  (verbose)\n");
   printf(" -w                                  (write signed acert to file)\n");
