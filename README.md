@@ -66,3 +66,50 @@ info: X509_ACERT_verify: good
 info: acert_do_test: good
 success
 ```
+## Sign ACERT with RSA-PSS with OpenSSL, verify with wolfSSL
+
+1. Build against openssl:
+
+```sh
+$ ./scripts/test/build_test
+info: linking against openssl
+info: build good
+```
+
+2. Use `certs/acert.pem` as input, and generate new keys and sign `-s`, use RSA-PSS `-r`, and write to file `-w`:
+
+```sh
+$ ./test/test_acert -f certs/acert.pem -srw
+info: using acert file: certs/acert.pem
+info: using rsa_pss
+info: PEM_read_bio_X509_ACERT: good
+info: acert version: 1
+info: X509_ACERT_sign: good
+info: wrote acert to file: acert_new.pem
+info: wrote pubkey to file: pkey_new.pem
+info: X509_ACERT_verify: good
+info: acert_do_test: good
+success
+```
+
+3. Rebuild against wolfssl:
+
+```sh
+$ ./scripts/test/build_test wolf
+info: linking against wolfssl
+info: build good
+```
+
+4. Finally, test wolfssl verify using newly generated `acert_new.pem` and `pkey_new.pem`:
+```sh
+$ ./test/test_acert -f acert_new.pem -k pkey_new.pem
+info: using acert file: acert_new.pem
+info: using pubkey file: pkey_new.pem
+info: issuer index: 4
+info: PEM_read_bio_X509_ACERT: good
+info: acert version: 1
+info: PEM_read_bio_PUBKEY: good
+info: X509_ACERT_verify: good
+info: acert_do_test: good
+success
+```
