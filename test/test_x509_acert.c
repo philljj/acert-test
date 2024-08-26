@@ -14,6 +14,7 @@
   #include <wolfssl/ssl.h>
 #else
   /* openssl includes */
+  #include <openssl/err.h>
   #include <openssl/pem.h>
   #include <openssl/rsa.h>
   #include <openssl/x509_acert.h>
@@ -41,6 +42,7 @@ static void         acert_dump_hex(const char * what, const byte * data,
 
 static int dump = 0;
 static int parse = 0;
+static int salt_len = 20;
 static int rsa_pss = 0;
 static int print = 0;
 static int sign = 0;
@@ -57,7 +59,7 @@ main(int    argc,
   int          opt = 0;
   int          rc = 0;
 
-  while ((opt = getopt(argc, argv, "c:f:k:dpqrsvw?")) != -1) {
+  while ((opt = getopt(argc, argv, "c:f:k:l:dpqrsvw?")) != -1) {
     switch (opt) {
     case 'c':
       cert = optarg;
@@ -73,6 +75,10 @@ main(int    argc,
 
     case 'k':
       pkey_file = optarg;
+      break;
+
+    case 'l':
+      salt_len = atoi(optarg);
       break;
 
     case 'p':
@@ -170,6 +176,11 @@ acert_check_opts(const char * file,
 
   if (rsa_pss) {
     printf("info: using rsa_pss\n");
+
+    if (salt_len <= 0) {
+      printf("error: invalid -s salt_len: %d\n", salt_len);
+      return EXIT_FAILURE;
+    }
   }
 
   return 0;
@@ -266,6 +277,8 @@ acert_do_test(const char * file,
       }
     }
     else {
+      int pss_rc = 0;
+
       pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA_PSS, NULL);
 
       if (pctx == NULL) {
@@ -274,7 +287,25 @@ acert_do_test(const char * file,
         goto end_acert_do_test;
       }
 
-      int pss_rc = EVP_PKEY_keygen_init(pctx);
+      pss_rc = EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING);
+      if (pss_rc <= 0) {
+        unsigned long err = ERR_get_error();
+        printf("error: EVP_PKEY_CTX_set_rsa_padding returned: %lu, %s\n",
+               err, ERR_error_string(err, NULL));
+        fail = 1;
+        goto end_acert_do_test;
+      }
+
+      pss_rc = EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, salt_len);
+      if (pss_rc <= 0) {
+        unsigned long err = ERR_get_error();
+        printf("error: EVP_PKEY_CTX_set_rsa_pss_saltlen returned: %lu, %s\n",
+               err, ERR_error_string(err, NULL));
+        fail = 1;
+        goto end_acert_do_test;
+      }
+
+      pss_rc = EVP_PKEY_keygen_init(pctx);
 
       if (pss_rc <= 0) {
         printf("error: EVP_PKEY_keygen_init returned: %d\n", pss_rc);
@@ -338,8 +369,9 @@ acert_do_test(const char * file,
       printf("info: X509_ACERT_verify: good\n");
     }
     else {
-      printf("error: X509_ACERT_verify(%p, %p) returned: %d\n", x509, pkey,
-             verify_rc);
+      unsigned long err = ERR_get_error();
+      printf("error: X509_ACERT_verify returned: %d: %lu, %s\n",
+             verify_rc, err, ERR_error_string(err, NULL));
       fail = 1;
       goto end_acert_do_test;
     }

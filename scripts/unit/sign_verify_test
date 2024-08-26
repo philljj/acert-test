@@ -18,14 +18,14 @@ for acert in "certs/acert.pem" \
   fi
 
   if ! ./test/test_acert -f $acert -srw > /dev/null 2>&1; then
-    err_and_die "test_acert -f -k: $acert"
+    err_and_die "test_acert -f -srw: $acert"
   fi
 
   echo "  info: test_acert sign verify: $acert: good"
 
   # Now test verification with newly signed cert and key.
   if ! ./test/test_acert -f acert_new.pem -k pkey_new.pem > /dev/null ; then
-    err_and_die "test_acert -srw: $acert"
+    err_and_die "test_acert -k: $acert"
   fi
 
   echo "  info: test_acert read verify: $acert: good"
