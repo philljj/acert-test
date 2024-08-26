@@ -42,7 +42,7 @@ static void         acert_dump_hex(const char * what, const byte * data,
 
 static int dump = 0;
 static int parse = 0;
-static int salt_len = 20;
+static int salt_len = 32;
 static int rsa_pss = 0;
 static int print = 0;
 static int sign = 0;
@@ -307,8 +307,19 @@ acert_do_test(const char * file,
       pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name(pctx, "sha256");
       if (pss_rc <= 0) {
         unsigned long err = ERR_get_error();
-        printf("error: EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name returned: %d: %lu, %s\n",
-               pss_rc, err, ERR_error_string(err, NULL));
+        printf("error: %s returned: %d: %lu, %s\n",
+               "EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name",
+                pss_rc, err, ERR_error_string(err, NULL));
+        fail = 1;
+        goto end_acert_do_test;
+      }
+
+      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen(pctx, salt_len);
+      if (pss_rc <= 0) {
+        unsigned long err = ERR_get_error();
+        printf("error: %s returned: %d: %lu, %s\n",
+               "EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen",
+                pss_rc, err, ERR_error_string(err, NULL));
         fail = 1;
         goto end_acert_do_test;
       }
