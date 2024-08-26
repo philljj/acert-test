@@ -287,28 +287,28 @@ acert_do_test(const char * file,
         goto end_acert_do_test;
       }
 
-      pss_rc = EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING);
-      if (pss_rc <= 0) {
-        unsigned long err = ERR_get_error();
-        printf("error: EVP_PKEY_CTX_set_rsa_padding returned: %lu, %s\n",
-               err, ERR_error_string(err, NULL));
-        fail = 1;
-        goto end_acert_do_test;
-      }
-
-      pss_rc = EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, salt_len);
-      if (pss_rc <= 0) {
-        unsigned long err = ERR_get_error();
-        printf("error: EVP_PKEY_CTX_set_rsa_pss_saltlen returned: %lu, %s\n",
-               err, ERR_error_string(err, NULL));
-        fail = 1;
-        goto end_acert_do_test;
-      }
-
       pss_rc = EVP_PKEY_keygen_init(pctx);
 
       if (pss_rc <= 0) {
         printf("error: EVP_PKEY_keygen_init returned: %d\n", pss_rc);
+        fail = 1;
+        goto end_acert_do_test;
+      }
+
+      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_md_name(pctx, "sha256", NULL);
+      if (pss_rc <= 0) {
+        unsigned long err = ERR_get_error();
+        printf("error: EVP_PKEY_CTX_set_rsa_pss_keygen_md_name returned: %d: %lu, %s\n",
+               pss_rc, err, ERR_error_string(err, NULL));
+        fail = 1;
+        goto end_acert_do_test;
+      }
+
+      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name(pctx, "sha256");
+      if (pss_rc <= 0) {
+        unsigned long err = ERR_get_error();
+        printf("error: EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name returned: %d: %lu, %s\n",
+               pss_rc, err, ERR_error_string(err, NULL));
         fail = 1;
         goto end_acert_do_test;
       }
@@ -336,8 +336,9 @@ acert_do_test(const char * file,
       printf("info: X509_ACERT_sign: good\n");
     }
     else {
-      printf("error: X509_ACERT_sign(%p, %p) returned: %d\n", x509, pkey,
-             sign_rc);
+      unsigned long err = ERR_get_error();
+      printf("error: X509_ACERT_sign returned: %d: %lu, %s\n",
+             sign_rc, err, ERR_error_string(err, NULL));
       fail = 1;
       goto end_acert_do_test;
     }
