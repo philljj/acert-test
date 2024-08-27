@@ -42,7 +42,7 @@ static void         acert_dump_hex(const char * what, const byte * data,
 
 static int dump = 0;
 static int parse = 0;
-static int salt_len = 32;
+static int salt_len = 0;
 static int rsa_pss = 0;
 static int print = 0;
 static int sign = 0;
@@ -79,6 +79,12 @@ main(int    argc,
 
     case 'l':
       salt_len = atoi(optarg);
+
+      if (salt_len <= 0) {
+        printf("error: invalid -s salt_len: %d\n", salt_len);
+        return EXIT_FAILURE;
+      }
+
       break;
 
     case 'p':
@@ -177,10 +183,6 @@ acert_check_opts(const char * file,
   if (rsa_pss) {
     printf("info: using rsa_pss\n");
 
-    if (salt_len <= 0) {
-      printf("error: invalid -s salt_len: %d\n", salt_len);
-      return EXIT_FAILURE;
-    }
   }
 
   return 0;
@@ -295,7 +297,12 @@ acert_do_test(const char * file,
         goto end_acert_do_test;
       }
 
-      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_md_name(pctx, "sha256", NULL);
+      /* todo: test with different mdnames. */
+      //const char * mdname = "SHA1";
+      const char * mdname = "SHA2-256";
+      //const char * mdname = "SHA2-384";
+
+      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_md_name(pctx, mdname, NULL);
       if (pss_rc <= 0) {
         unsigned long err = ERR_get_error();
         printf("error: EVP_PKEY_CTX_set_rsa_pss_keygen_md_name returned: %d: %lu, %s\n",
@@ -304,7 +311,7 @@ acert_do_test(const char * file,
         goto end_acert_do_test;
       }
 
-      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name(pctx, "sha256");
+      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name(pctx, mdname);
       if (pss_rc <= 0) {
         unsigned long err = ERR_get_error();
         printf("error: %s returned: %d: %lu, %s\n",
@@ -314,14 +321,16 @@ acert_do_test(const char * file,
         goto end_acert_do_test;
       }
 
-      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen(pctx, salt_len);
-      if (pss_rc <= 0) {
-        unsigned long err = ERR_get_error();
-        printf("error: %s returned: %d: %lu, %s\n",
-               "EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen",
-                pss_rc, err, ERR_error_string(err, NULL));
-        fail = 1;
-        goto end_acert_do_test;
+      if (salt_len) {
+        pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen(pctx, salt_len);
+        if (pss_rc <= 0) {
+          unsigned long err = ERR_get_error();
+          printf("error: %s returned: %d: %lu, %s\n",
+                 "EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen",
+                  pss_rc, err, ERR_error_string(err, NULL));
+          fail = 1;
+          goto end_acert_do_test;
+        }
       }
 
       pss_rc = EVP_PKEY_keygen(pctx, &pkey);
