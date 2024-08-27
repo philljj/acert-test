@@ -505,8 +505,8 @@ acert_parse_attr(const X509_ACERT * x509)
 #define BOLDYELLOW "\033[1m\033[33m"
 #define RESET      "\033[0m"
 
-/* Dump data as hex, with some pretty color coding
- * of data.
+/* Dump data as hex, with some pretty color coding.
+ * Kind of a silly work in progress, for debugging use.
  * */
 static void
 acert_dump_hex(const char * what,

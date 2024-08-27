@@ -14,9 +14,9 @@ Supports:
 - certs (test attribute certs)
 - openssl (clone of openssl)
 - scripts (useful scripts)
-- test (simple test program)
+- test (a little attribute cert test program)
 - wolfssl (clone of wolfssl)
-- README.md (you'r reading it now)
+- README.md (you're reading it now)
 
 ## Prerequisites
 
