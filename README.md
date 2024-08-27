@@ -52,7 +52,47 @@ To build with wolfssl:
 $./scripts/test/build_test wolf
 ```
 
-## ACERT verification with pubkey
+## Unit Tests
+
+Unit test scripts located here:
+```sh
+$ls scripts/unit/
+basic_test  mask_function  salt_len  sign_verify_test
+```
+
+Testing OpenSSL and wolfSSL with different mask generation functions:
+
+```sh
+$./scripts/unit/mask_function 
+  info: test_acert sign verify: mgf1 with sha1: good
+  info: test_acert read verify: mgf1 with sha1: good
+  info: test_acert read verify (wolf): mgf1 with sha1: good
+info: certs/acert.pem: pass
+
+  info: test_acert sign verify: mgf1 with sha224: good
+  info: test_acert read verify: mgf1 with sha224: good
+  info: test_acert read verify (wolf): mgf1 with sha224: good
+info: certs/acert.pem: pass
+
+  info: test_acert sign verify: mgf1 with sha256: good
+  info: test_acert read verify: mgf1 with sha256: good
+  info: test_acert read verify (wolf): mgf1 with sha256: good
+info: certs/acert.pem: pass
+
+  info: test_acert sign verify: mgf1 with sha384: good
+  info: test_acert read verify: mgf1 with sha384: good
+  info: test_acert read verify (wolf): mgf1 with sha384: good
+info: certs/acert.pem: pass
+
+  info: test_acert sign verify: mgf1 with sha512: good
+  info: test_acert read verify: mgf1 with sha512: good
+  info: test_acert read verify (wolf): mgf1 with sha512: good
+info: certs/acert.pem: pass
+```
+
+## Examples
+
+### ACERT verification with pubkey
 
 ```sh
 $ ./test/test_acert -f certs/signed/acert.pem -k certs/signed/acert_pubkey.pem
@@ -66,7 +106,7 @@ info: X509_ACERT_verify: good
 info: acert_do_test: good
 success
 ```
-## Sign ACERT with RSA-PSS with OpenSSL, verify with wolfSSL
+### Sign ACERT with RSA-PSS with OpenSSL, verify with wolfSSL
 
 1. Build against openssl:
 
