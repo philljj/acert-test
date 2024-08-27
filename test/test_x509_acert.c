@@ -40,14 +40,16 @@ static void         acert_dump_hex(const char * what, const byte * data,
                                    size_t len);
 #endif /* if USE_WOLFSSL */
 
-static int dump = 0;
-static int parse = 0;
-static int salt_len = 0;
-static int rsa_pss = 0;
-static int print = 0;
-static int sign = 0;
-static int write_acert = 0;
-static int verbose = 0;
+static int          dump = 0;
+static int          parse = 0;
+static const char * mdname = "SHA2-256";
+static const char * mgf1_mdname = "SHA1";
+static int          salt_len = 0;
+static int          rsa_pss = 0;
+static int          print = 0;
+static int          sign = 0;
+static int          write_acert = 0;
+static int          verbose = 0;
 
 int
 main(int    argc,
@@ -59,7 +61,7 @@ main(int    argc,
   int          opt = 0;
   int          rc = 0;
 
-  while ((opt = getopt(argc, argv, "c:f:k:l:dpqrsvw?")) != -1) {
+  while ((opt = getopt(argc, argv, "c:f:g:k:l:m:dpqrsvw?")) != -1) {
     switch (opt) {
     case 'c':
       cert = optarg;
@@ -85,6 +87,10 @@ main(int    argc,
         return EXIT_FAILURE;
       }
 
+      break;
+
+    case 'm':
+      mgf1_mdname = optarg;
       break;
 
     case 'p':
@@ -182,7 +188,8 @@ acert_check_opts(const char * file,
 
   if (rsa_pss) {
     printf("info: using rsa_pss\n");
-
+    printf("info: using mdname: %s\n", mdname);
+    printf("info: using mask alg: mgf1 with %s\n", mgf1_mdname);
   }
 
   return 0;
@@ -297,11 +304,6 @@ acert_do_test(const char * file,
         goto end_acert_do_test;
       }
 
-      /* todo: test with different mdnames. */
-      //const char * mdname = "SHA1";
-      const char * mdname = "SHA2-256";
-      //const char * mdname = "SHA2-384";
-
       pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_md_name(pctx, mdname, NULL);
       if (pss_rc <= 0) {
         unsigned long err = ERR_get_error();
@@ -311,7 +313,7 @@ acert_do_test(const char * file,
         goto end_acert_do_test;
       }
 
-      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name(pctx, mdname);
+      pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name(pctx, mgf1_mdname);
       if (pss_rc <= 0) {
         unsigned long err = ERR_get_error();
         printf("error: %s returned: %d: %lu, %s\n",

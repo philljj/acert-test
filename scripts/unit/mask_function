@@ -1,0 +1,47 @@
+#!/bin/bash
+
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+NC='\033[0m'
+
+function err_and_die {
+  echo -e "error: $1: ${RED}fail${NC}"
+  exit 1
+}
+
+acert="certs/acert.pem"
+
+for mask in "sha1" "sha224" "sha256" "sha384" "sha512"; do
+  # build against openssl
+  if ! ./scripts/test/build_test > /dev/null; then
+    err_and_die "build_test: $acert"
+  fi
+
+  if ! ./test/test_acert -f $acert -srw -m $mask > /dev/null 2>&1; then
+    err_and_die "test_acert -f -srw -l $mask: $acert"
+  fi
+
+  echo "  info: test_acert sign verify: $mask: good"
+
+  # Now test verification with newly signed cert and key.
+  if ! ./test/test_acert -f acert_new.pem -k pkey_new.pem > /dev/null ; then
+    err_and_die "test_acert -k: $mask"
+  fi
+
+  echo "  info: test_acert read verify: $mask: good"
+
+  # Now rebuild against wolfssl...
+  if ! ./scripts/test/build_test wolf  > /dev/null; then
+    err_and_die "build_test wolf: $mask"
+  fi
+
+  # ... and repeat test.
+  if ! ./test/test_acert -f acert_new.pem -k pkey_new.pem > /dev/null ; then
+    err_and_die "test_acert -f -k (wolf): $mask"
+  fi
+
+  echo "  info: test_acert read verify (wolf): $mask: good"
+
+  echo -e "info: $acert: ${GREEN}pass${NC}"
+  echo ""
+done
