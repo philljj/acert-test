@@ -22,6 +22,7 @@
 
 static int          acert_check_opts(const char * file, const char * cert,
                                      const char * pkey_file);
+static void         acert_err(const char * what, int rc);
 static int          acert_print_usage_and_die(void) __attribute__((noreturn));
 static int          acert_do_test(const char * file, const char * cert,
                                   const char * pkey_file);
@@ -306,19 +307,14 @@ acert_do_test(const char * file,
 
       pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_md_name(pctx, mdname, NULL);
       if (pss_rc <= 0) {
-        unsigned long err = ERR_get_error();
-        printf("error: EVP_PKEY_CTX_set_rsa_pss_keygen_md_name returned: %d: %lu, %s\n",
-               pss_rc, err, ERR_error_string(err, NULL));
+        acert_err("EVP_PKEY_CTX_set_rsa_pss_keygen_md_name", pss_rc);
         fail = 1;
         goto end_acert_do_test;
       }
 
       pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name(pctx, mgf1_mdname);
       if (pss_rc <= 0) {
-        unsigned long err = ERR_get_error();
-        printf("error: %s returned: %d: %lu, %s\n",
-               "EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name",
-                pss_rc, err, ERR_error_string(err, NULL));
+        acert_err("EVP_PKEY_CTX_set_rsa_pss_keygen_mgf1_md_name", pss_rc);
         fail = 1;
         goto end_acert_do_test;
       }
@@ -326,10 +322,7 @@ acert_do_test(const char * file,
       if (salt_len) {
         pss_rc = EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen(pctx, salt_len);
         if (pss_rc <= 0) {
-          unsigned long err = ERR_get_error();
-          printf("error: %s returned: %d: %lu, %s\n",
-                 "EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen",
-                  pss_rc, err, ERR_error_string(err, NULL));
+          acert_err("EVP_PKEY_CTX_set_rsa_pss_keygen_saltlen", pss_rc);
           fail = 1;
           goto end_acert_do_test;
         }
@@ -358,9 +351,7 @@ acert_do_test(const char * file,
       printf("info: X509_ACERT_sign: good\n");
     }
     else {
-      unsigned long err = ERR_get_error();
-      printf("error: X509_ACERT_sign returned: %d: %lu, %s\n",
-             sign_rc, err, ERR_error_string(err, NULL));
+      acert_err("X509_ACERT_sign", sign_rc);
       fail = 1;
       goto end_acert_do_test;
     }
@@ -392,9 +383,7 @@ acert_do_test(const char * file,
       printf("info: X509_ACERT_verify: good\n");
     }
     else {
-      unsigned long err = ERR_get_error();
-      printf("error: X509_ACERT_verify returned: %d: %lu, %s\n",
-             verify_rc, err, ERR_error_string(err, NULL));
+      acert_err("X509_ACERT_verify", verify_rc);
       fail = 1;
       goto end_acert_do_test;
     }
@@ -842,6 +831,17 @@ acert_print(X509_ACERT * x509)
   return 0;
 }
 
+static void
+acert_err(const char * what,
+          int          rc)
+{
+    unsigned long err = ERR_get_error();
+    printf("error: %s returned: %d: %lu, %s\n",
+            what, rc, err, ERR_error_string(err, NULL));
+
+    return;
+}
+
 static int
 acert_print_usage_and_die(void)
 {
@@ -849,6 +849,8 @@ acert_print_usage_and_die(void)
   printf(" -c <path to pub key cert>\n");
   printf(" -f <path to acert file\n");
   printf(" -k <path to pub key file>\n");
+  printf(" -m <mask function>                  (rsa_pss only)\n");
+  printf(" -l <salt len>\n                     (rsa_pss only)");
   printf(" -r                                  (use rsa_pss)\n");
   printf(" -s                                  (resign and verify)\n");
   printf(" -v                                  (verbose)\n");
