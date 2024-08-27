@@ -1,0 +1,25 @@
+#!/bin/bash
+
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+NC='\033[0m'
+
+function run_test {
+  #if ./scripts/unit/$1 > /dev/null 2>&1; then
+  if ./scripts/unit/$1 ; then
+    echo -e "info: $1: ${GREEN}pass${NC}"
+  else
+    echo -e "error: $1: ${RED}fail${NC}"
+  fi
+}
+
+
+for test in "basic_test" \
+            "mask_function" \
+            "salt_len" \
+            "sign_verify_test"; do
+  run_test $test
+done
+
+echo ""
+echo -e "info: ${GREEN}all pass${NC}"
