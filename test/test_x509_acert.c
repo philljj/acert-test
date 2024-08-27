@@ -850,7 +850,7 @@ acert_print_usage_and_die(void)
   printf(" -f <path to acert file\n");
   printf(" -k <path to pub key file>\n");
   printf(" -m <mask function>                  (rsa_pss only)\n");
-  printf(" -l <salt len>\n                     (rsa_pss only)");
+  printf(" -l <salt len>                       (rsa_pss only)\n");
   printf(" -r                                  (use rsa_pss)\n");
   printf(" -s                                  (resign and verify)\n");
   printf(" -v                                  (verbose)\n");
@@ -861,7 +861,6 @@ acert_print_usage_and_die(void)
   printf("  $./test/test_acert -f certs/signed/acert.pem -k certs/signed/acert_pubkey.pem\n");
   printf("  info: using acert file: certs/signed/acert.pem\n");
   printf("  info: using pubkey file: certs/signed/acert_pubkey.pem\n");
-  printf("  info: holder tag index: 2\n");
   printf("  info: PEM_read_bio_X509_ACERT: good\n");
   printf("  info: acert version: 1\n");
   printf("  info: PEM_read_bio_PUBKEY: good\n");
