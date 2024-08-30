@@ -35,11 +35,11 @@ static EVP_PKEY *   acert_read_pubkey(const char * file);
 static int          acert_print(X509_ACERT * x509);
 static EVP_PKEY *   acert_read_x509_pubkey(const char * cert);
 static int          acert_test_api_misc(X509_ACERT * x509);
-#if defined(USE_WOLFSSL)
+#if defined(USE_WOLFSSL) && defined(PUBLIC_ASN)
 static int          acert_parse_attr(const X509_ACERT * x509);
 static void         acert_dump_hex(const char * what, const byte * data,
                                    size_t len);
-#endif /* if USE_WOLFSSL */
+#endif /* if USE_WOLFSSL && PUBLIC_ASN*/
 
 static int          dump = 0;
 static int          parse = 0;
@@ -233,7 +233,7 @@ acert_do_test(const char * file,
     goto end_acert_do_test;
   }
 
-  #if defined(USE_WOLFSSL)
+  #if defined(USE_WOLFSSL) && defined(PUBLIC_ASN)
   rc = acert_parse_attr(x509);
 
   if (rc) {
@@ -241,7 +241,7 @@ acert_do_test(const char * file,
     fail = 1;
     goto end_acert_do_test;
   }
-  #endif /* if USE_WOLFSSL */
+  #endif /* if USE_WOLFSSL && PUBLIC_ASN*/
 
   if (cert) {
     pkey = acert_read_x509_pubkey(cert);
@@ -433,7 +433,7 @@ acert_test_api_misc(X509_ACERT * x509)
   return rc;
 }
 
-#if defined(USE_WOLFSSL)
+#if defined(USE_WOLFSSL) && defined(PUBLIC_ASN)
 /* Given an x509, retrieves the raw attributes buffer and
  * length, and then parses it.
  *
@@ -607,7 +607,7 @@ acert_dump_hex(const char * what,
 
   return;
 }
-#endif /* if USE_WOLFSSL */
+#endif /* if USE_WOLFSSL && PUBLIC_ASN*/
 
 /* Reads and print pubkey certificate.
  * */
