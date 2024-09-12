@@ -1,0 +1,26 @@
+#!/bin/bash
+
+multitest_path=~/work/wolfssl/testing/git-hooks/wolfssl-multi-test.sh
+
+file $multitest_path || exit 1
+
+cd wolfssl || exit 1
+
+#
+# Note: added "NO_OPENSSL_TEST=1", because on my
+# fedora box the scripts/openssl.test is brittle.
+#
+
+ENABLE_ALL_TEST_FLAGS='--enable-all --enable-testcert --enable-acert' \
+  NO_OPENSSL_TEST=1 \
+  $multitest_path \
+  --keep-going \
+  --max-check-try-count=2 \
+  --enable-bwrap \
+  --verbose-analyzers \
+  --enable-text-styles \
+  --report-cumulative-times \
+  --no-result-cache \
+  --no-git-refresh \
+  --test-uncommitted \
+  super-quick-check
