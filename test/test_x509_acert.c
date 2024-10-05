@@ -52,6 +52,15 @@ static int          sign = 0;
 static int          write_acert = 0;
 static int          verbose = 0;
 
+#if defined(USE_WOLFSSL)
+#define STATIC_MEM_SIZE 120000
+/* if building with enable-staticmemory and WOLFSSL_NO_MALLOC,
+ * turn on use_static_mem */
+static byte                static_mem[STATIC_MEM_SIZE];
+static WOLFSSL_HEAP_HINT * HEAP_HINT;
+static int                 use_static_mem = 1;
+#endif /* if USE_WOLFSSL */
+
 int
 main(int    argc,
      char * argv[])
@@ -126,6 +135,16 @@ main(int    argc,
   }
 
   #if defined(USE_WOLFSSL)
+  if (use_static_mem) {
+    if (wc_LoadStaticMemory(&HEAP_HINT, static_mem, sizeof(static_mem),
+                            WOLFMEM_GENERAL, 1) != 0) {
+      printf("unable to load static memory.\n");
+      return(EXIT_FAILURE);
+    }
+
+    wolfSSL_SetGlobalHeapHint(HEAP_HINT);
+  }
+
   wolfSSL_Init();
   if (verbose) {
     wolfSSL_Debugging_ON();

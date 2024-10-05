@@ -5,7 +5,7 @@ GREEN='\033[1;32m'
 NC='\033[0m'
 
 function run_test {
-  if ./test/test_acert -f $1 > /dev/null 2>&1; then
+  if ./test/test_acert -f $1 > /dev/null ; then
     echo -e "info: $1: ${GREEN}pass${NC}"
   else
     echo -e "error: $1: ${RED}fail${NC}"
