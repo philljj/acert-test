@@ -9,6 +9,7 @@ function run_test {
     echo -e "info: $1: ${GREEN}pass${NC}"
   else
     echo -e "error: $1: ${RED}fail${NC}"
+    exit 1
   fi
 }
 
