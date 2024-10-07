@@ -52,14 +52,15 @@ static int          sign = 0;
 static int          write_acert = 0;
 static int          verbose = 0;
 
-#if defined(USE_WOLFSSL)
+/* #define USE_STATIC_MEM */
+#if defined(USE_WOLFSSL) && defined(USE_STATIC_MEM)
 #define STATIC_MEM_SIZE 120000
 /* if building with enable-staticmemory and WOLFSSL_NO_MALLOC,
  * turn on use_static_mem */
 static byte                static_mem[STATIC_MEM_SIZE];
 static WOLFSSL_HEAP_HINT * HEAP_HINT;
 static int                 use_static_mem = 1;
-#endif /* if USE_WOLFSSL */
+#endif /* if USE_WOLFSSL  && USE_STATIC_MEM */
 
 int
 main(int    argc,
@@ -134,7 +135,7 @@ main(int    argc,
     }
   }
 
-  #if defined(USE_WOLFSSL)
+  #if defined(USE_WOLFSSL) && defined(USE_STATIC_MEM)
   if (use_static_mem) {
     if (wc_LoadStaticMemory(&HEAP_HINT, static_mem, sizeof(static_mem),
                             WOLFMEM_GENERAL, 1) != 0) {
@@ -149,7 +150,7 @@ main(int    argc,
   if (verbose) {
     wolfSSL_Debugging_ON();
   }
-  #endif /* if USE_WOLFSSL */
+  #endif /* if USE_WOLFSSL && USE_STATIC_MEM */
 
   rc = acert_check_opts(file, cert, pkey_file);
 
