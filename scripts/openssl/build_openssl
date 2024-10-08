@@ -1,5 +1,11 @@
 #!/bin/bash
-git clone https://github.com/openssl/openssl.git --depth=1 || exit 1
+if [ ! -d openssl ] ; then
+  echo "info: cloning openssl"
+  git clone https://github.com/openssl/openssl.git --depth=1 || exit 1
+else
+  echo "info: using existing openssl"
+fi
+
 cd openssl || exit 1
 ./Configure || exit 1
 make || exit 1
