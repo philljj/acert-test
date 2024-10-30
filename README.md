@@ -23,8 +23,6 @@ Supports:
 ```sh
 $ git clone https://github.com/openssl/openssl.git
 $ git clone https://github.com/philljj/wolfssl.git
-$ cd wolfssl
-$ git co x509_acert_support
 ```
 
 Build openssl and wolfssl with:

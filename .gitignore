@@ -2,3 +2,4 @@
 /openssl/
 test/test_acert
 *.swp
+*.pem
