@@ -24,6 +24,7 @@ fi
   --enable-debug \
   --enable-opensslextra \
   --enable-rsapss \
+  --enable-staticmemory \
   CFLAGS="-DWOLFSSL_DEBUG_ASN_TEMPLATE -DWOLFSSL_PUBLIC_ASN" \
   || exit 1
 make || exit 1

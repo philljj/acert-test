@@ -145,12 +145,14 @@ main(int    argc,
 
     wolfSSL_SetGlobalHeapHint(HEAP_HINT);
   }
+  #endif /* if USE_WOLFSSL && USE_STATIC_MEM */
 
+  #if defined(USE_WOLFSSL)
   wolfSSL_Init();
   if (verbose) {
     wolfSSL_Debugging_ON();
   }
-  #endif /* if USE_WOLFSSL && USE_STATIC_MEM */
+  #endif /* if USE_WOLFSSL */
 
   rc = acert_check_opts(file, cert, pkey_file);
 
